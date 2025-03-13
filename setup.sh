@@ -51,19 +51,13 @@ echo -e "${YELLOW}Copying provider files to bolt.diy...${NC}"
 cp "${REPO_DIR}/llm-providers/providers/deepseek-local.ts" "${PROVIDERS_DIR}/"
 cp "${REPO_DIR}/llm-providers/providers/codellama-local.ts" "${PROVIDERS_DIR}/"
 
-# Update vite.config.ts to allow ngrok connections
-echo -e "${YELLOW}Updating vite.config.ts to allow ngrok connections...${NC}"
-if [ -f "${BOLT_DIR}/vite.config.ts" ]; then
-    # Check if ngrok is already allowed
-    if ! grep -q "allowedHosts: \['.ngrok-free.app'\]" "${BOLT_DIR}/vite.config.ts"; then
-        # Add ngrok to allowed hosts
-        sed -i 's/server: {/server: {\n      allowedHosts: [".ngrok-free.app"],\n      host: true, \/\/ Allow external access/' "${BOLT_DIR}/vite.config.ts"
-    fi
-fi
+# Copy vite.config.ts to bolt.diy
+echo -e "${YELLOW}Copying vite.config.ts to bolt.diy...${NC}"
+cp "${REPO_DIR}/vite.config.ts" "${BOLT_DIR}/vite.config.ts"
 
-# Add environment variables to bolt.diy .env file
-echo -e "${YELLOW}Adding environment variables to bolt.diy .env file...${NC}"
-ENV_FILE="${BOLT_DIR}/.env"
+# Add environment variables to bolt.diy .env.local file
+echo -e "${YELLOW}Adding environment variables to bolt.diy .env.local file...${NC}"
+ENV_FILE="${BOLT_DIR}/.env.local"
 
 if [ ! -f "$ENV_FILE" ]; then
     touch "$ENV_FILE"
@@ -76,6 +70,11 @@ grep -q "CODELLAMA_LOCAL_API_BASE_URL" "$ENV_FILE" || echo "CODELLAMA_LOCAL_API_
 # Create a simple script to start the API server
 cat > "${REPO_DIR}/start-api.sh" << 'EOF'
 #!/bin/bash
+# Load environment variables
+if [ -f ".env" ]; then
+    export $(grep -v '^#' .env | xargs)
+fi
+
 cd "$(dirname "$0")/api-server"
 python run.py --model "$1"
 EOF
@@ -95,7 +94,9 @@ chmod +x "${REPO_DIR}/start-bolt.sh"
 cat > "${REPO_DIR}/expose-bolt.sh" << 'EOF'
 #!/bin/bash
 # Load environment variables
-source /root/.env
+if [ -f ".env" ]; then
+    export $(grep -v '^#' .env | xargs)
+fi
 
 if [ -z "$NGROK_AUTH_TOKEN" ]; then
     echo "Error: NGROK_AUTH_TOKEN is not set. Please run configure.py first."

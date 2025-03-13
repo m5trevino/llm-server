@@ -1,4 +1,3 @@
-```bash
 #!/bin/bash
 
 # Cyberpunk-themed colors
@@ -13,12 +12,12 @@ NC='\033[0m' # No Color
 # ASCII Art Banner
 echo -e "${PURPLE}"
 cat << "EOF"
- _     _     __  __    ____  _____ ______     _______ ____
+ _    _    __  __    ____  ____ ____    ____ ____
 | |   | |   |  \/  |  / ___|| ____|  _ \ \   / / ____|  _ \ 
 | |   | |   | |\/| |  \___ \|  _| | |_) \ \ / /|  _| | |_) |
 | |___| |___| |  | |   ___) | |___|  _ < \ V / | |___|  _ < 
-|_____|_____|_|  |_|  |____/|_____|_| \_\ \_/  |_____|_| \_\
-                                                          
+|____|____|_|  |_|  |____/|____|_| \_\ \_/  |____|_| \_\
+    
 EOF
 echo -e "${CYAN}${BOLD}RunPod Setup for bolt.diy with Local LLM Integration${NC}\n"
 
@@ -39,17 +38,17 @@ show_progress() {
     echo -ne "] 0%"
   
     for ((i=0; i<=size; i++)); do
-        sleep $(bc <<< "scale=3; $duration/$size")
+        sleep 0.1  # Fixed sleep time to avoid bc dependency
         echo -ne "\r${prefix} ["
-      
+        
         for ((j=0; j<i; j++)); do
             echo -ne "${CYAN}${char}${NC}"
         done
-      
+        
         for ((j=i; j<size; j++)); do
             echo -ne "${empty}"
         done
-      
+        
         local percentage=$((i*100/size))
         echo -ne "] ${percentage}%"
     done
@@ -102,6 +101,7 @@ print_header "SYSTEM PREPARATION"
 # Update system packages
 print_step "Updating system packages..."
 apt-get update > /dev/null 2>&1
+apt-get install -y bc > /dev/null 2>&1  # Install bc for calculations
 apt-get upgrade -y > /dev/null 2>&1
 show_progress 2 "System update"
 print_success "System packages updated"
@@ -239,6 +239,11 @@ echo -e "${CYAN}Model: $1${NC}"
 # Activate virtual environment
 source venv/bin/activate
 
+# Load environment variables
+if [ -f ".env" ]; then
+    export $(grep -v '^#' .env | xargs)
+fi
+
 # Start the API server
 cd "$(dirname "$0")/api-server"
 python run.py --model "$1"
@@ -285,8 +290,8 @@ NC='\033[0m' # No Color
 echo -e "${PURPLE}${BOLD}Exposing bolt.diy via ngrok...${NC}"
 
 # Load environment variables
-if [ -f "/root/.env" ]; then
-    source /root/.env
+if [ -f ".env" ]; then
+    export $(grep -v '^#' .env | xargs)
 fi
 
 if [ -z "$NGROK_AUTH_TOKEN" ]; then

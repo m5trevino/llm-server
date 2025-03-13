@@ -5,3 +5,17 @@ transformers>=4.34.0
 torch>=2.0.0
 bitsandbytes>=0.39.0
 accelerate>=0.23.0
+bc
+pyngrok==6.0.0
+huggingface_hub
+sentencepiece
+scipy
+psutil
+python-dotenv
+orjson
+pyyaml
+triton
+xformers
+deepspeed
+aiofiles
+numpy==1.26.4
