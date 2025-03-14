@@ -169,82 +169,35 @@ DEFAULT_NUM_CTX=4096
 EOF
 echo -e "${GREEN}.env.local created${NC}"
 
-# Create vite.config.ts - MODIFIED to remove rollup-plugin-visualizer dependency
-echo -e "${YELLOW}Creating vite.config.ts...${NC}"
-cat > "${BOLT_DIR}/vite.config.ts" << 'EOF'
-import { defineConfig } from 'vite';
-import react from '@vitejs/plugin-react';
-import { fileURLToPath, URL } from 'node:url';
-import UnoCSS from 'unocss/vite';
-import { presetUno, presetIcons, presetWebFonts } from 'unocss';
-import { VitePWA } from 'vite-plugin-pwa';
-import { nodePolyfills } from 'vite-plugin-node-polyfills';
-
-// https://vitejs.dev/config/
-export default defineConfig({
-  plugins: [
-    react(),
-    UnoCSS({
-      presets: [
-        presetUno(),
-        presetIcons({
-          scale: 1.2,
-          extraProperties: {
-            display: 'inline-block',
-            'vertical-align': 'middle',
-          },
-        }),
-        presetWebFonts({
-          provider: 'google',
-          fonts: {
-            sans: ['Inter:400,500,600,700,800,900', 'Inter'],
-            mono: ['Fira Code', 'Fira Mono:400,700'],
-          },
-        }),
-      ],
-    }),
-    VitePWA({
-      registerType: 'autoUpdate',
-      includeAssets: ['favicon.ico', 'apple-touch-icon.png', 'mask-icon.svg'],
-      manifest: {
-        name: 'bolt.diy',
-        short_name: 'bolt.diy',
-        theme_color: '#ffffff',
-        icons: [
-          {
-            src: 'pwa-64x64.png',
-            sizes: '64x64',
-            type: 'image/png',
-          },
-          {
-            src: 'pwa-192x192.png',
-            sizes: '192x192',
-            type: 'image/png',
-          },
-          {
-            src: 'pwa-512x512.png',
-            sizes: '512x512',
-            type: 'image/png',
-          },
-        ],
-      },
-    }),
-    nodePolyfills(),
-  ],
-  resolve: {
-    alias: {
-      '~': fileURLToPath(new URL('./app', import.meta.url)),
-    },
-  },
-  server: {
-    host: process.env.BOLT_HOST || '0.0.0.0',
-    port: parseInt(process.env.BOLT_PORT || '5173'),
-    allowedHosts: ['.ngrok-free.app'], // Add this line to allow ngrok connections
-    host: true, // Allow external access
-  },
-});
-EOF
-echo -e "${GREEN}vite.config.ts created${NC}"
+# Modify vite.config.ts to add server configuration
+echo -e "${YELLOW}Modifying vite.config.ts...${NC}"
+# First, check if the file exists
+if [ -f "${BOLT_DIR}/vite.config.ts" ]; then
+    # Add server configuration to vite.config.ts
+    # Look for the closing bracket of the defineConfig return object
+    # and insert the server configuration before it
+    awk '
+    /return {/ {
+        in_return = 1
+    }
+    /^  };/ {
+        if (in_return && !server_added) {
+            print "  server: {";
+            print "    allowedHosts: [\".ngrok-free.app\"],";
+            print "    host: true, // Allow external access";
+            print "  },";
+            server_added = 1
+        }
+    }
+    { print }
+    ' "${BOLT_DIR}/vite.config.ts" > "${BOLT_DIR}/vite.config.ts.new"
+    
+    # Replace the original file
+    mv "${BOLT_DIR}/vite.config.ts.new" "${BOLT_DIR}/vite.config.ts"
+    echo -e "${GREEN}vite.config.ts modified${NC}"
+else
+    echo -e "${RED}vite.config.ts not found. Please make sure bolt.diy is installed correctly.${NC}"
+fi
 
 # Update registry.ts to include local providers
 echo -e "${YELLOW}Updating registry.ts...${NC}"

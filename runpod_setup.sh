@@ -165,8 +165,13 @@ chmod +x server_setup.sh
 print_success "Server setup completed"
 
 print_step "Running additional configuration..."
-chmod +x configure.sh
-./configure.sh
+# Check if tokens are already configured
+if grep -q "HUGGINGFACE_API_KEY=" "$ENV_FILE" && grep -q "NGROK_AUTH_TOKEN=" "$ENV_FILE"; then
+    echo -e "${YELLOW}Tokens already configured, skipping configuration wizard.${NC}"
+else
+    chmod +x configure.sh
+    ./configure.sh
+fi
 print_success "Configuration completed"
 
 print_header "SETUP COMPLETE"
