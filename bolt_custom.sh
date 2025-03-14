@@ -169,7 +169,7 @@ DEFAULT_NUM_CTX=4096
 EOF
 echo -e "${GREEN}.env.local created${NC}"
 
-# Create vite.config.ts
+# Create vite.config.ts - MODIFIED to remove rollup-plugin-visualizer dependency
 echo -e "${YELLOW}Creating vite.config.ts...${NC}"
 cat > "${BOLT_DIR}/vite.config.ts" << 'EOF'
 import { defineConfig } from 'vite';
@@ -177,7 +177,6 @@ import react from '@vitejs/plugin-react';
 import { fileURLToPath, URL } from 'node:url';
 import UnoCSS from 'unocss/vite';
 import { presetUno, presetIcons, presetWebFonts } from 'unocss';
-import { visualizer } from 'rollup-plugin-visualizer';
 import { VitePWA } from 'vite-plugin-pwa';
 import { nodePolyfills } from 'vite-plugin-node-polyfills';
 
@@ -204,7 +203,6 @@ export default defineConfig({
         }),
       ],
     }),
-    visualizer(),
     VitePWA({
       registerType: 'autoUpdate',
       includeAssets: ['favicon.ico', 'apple-touch-icon.png', 'mask-icon.svg'],
@@ -241,6 +239,8 @@ export default defineConfig({
   server: {
     host: process.env.BOLT_HOST || '0.0.0.0',
     port: parseInt(process.env.BOLT_PORT || '5173'),
+    allowedHosts: ['.ngrok-free.app'], // Add this line to allow ngrok connections
+    host: true, // Allow external access
   },
 });
 EOF
