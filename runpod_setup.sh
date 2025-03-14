@@ -52,6 +52,85 @@ REPO_DIR=$(pwd)
 mkdir -p "${REPO_DIR}/api-server"
 mkdir -p "${REPO_DIR}/llm-providers/providers"
 
+# Create .env and .tokens files if they don't exist
+ENV_FILE="${REPO_DIR}/.env"
+TOKENS_FILE="${REPO_DIR}/.tokens"
+
+if [ ! -f "$ENV_FILE" ]; then
+    touch "$ENV_FILE"
+    chmod 600 "$ENV_FILE"
+fi
+
+if [ ! -f "$TOKENS_FILE" ]; then
+    touch "$TOKENS_FILE"
+    chmod 600 "$TOKENS_FILE"
+fi
+
+print_header "TOKEN CONFIGURATION"
+
+# Ask for HuggingFace API token
+print_step "Setting up HuggingFace API token..."
+echo -e "${YELLOW}Do you want to configure a HuggingFace API token? (recommended) (y/n)${NC}"
+read -r configure_hf
+if [[ $configure_hf == "y" || $configure_hf == "Y" ]]; then
+    echo -e "${CYAN}Please enter your HuggingFace API token:${NC}"
+    read -r hf_token
+    
+    # Save to both files
+    if grep -q "^HUGGINGFACE_API_KEY=" "$ENV_FILE"; then
+        sed -i "s|^HUGGINGFACE_API_KEY=.*|HUGGINGFACE_API_KEY=$hf_token|" "$ENV_FILE"
+    else
+        echo "HUGGINGFACE_API_KEY=$hf_token" >> "$ENV_FILE"
+    fi
+    
+    if grep -q "^HUGGINGFACE_API_KEY=" "$TOKENS_FILE"; then
+        sed -i "s|^HUGGINGFACE_API_KEY=.*|HUGGINGFACE_API_KEY=$hf_token|" "$TOKENS_FILE"
+    else
+        echo "HUGGINGFACE_API_KEY=$hf_token" >> "$TOKENS_FILE"
+    fi
+    
+    print_success "HuggingFace API token saved"
+else
+    print_step "Skipping HuggingFace API token configuration"
+fi
+
+# Ask for ngrok token
+print_step "Setting up ngrok authentication token..."
+echo -e "${YELLOW}Do you want to configure ngrok for exposing bolt.diy to the internet? (y/n)${NC}"
+read -r configure_ngrok
+if [[ $configure_ngrok == "y" || $configure_ngrok == "Y" ]]; then
+    echo -e "${CYAN}Please enter your ngrok authentication token:${NC}"
+    read -r ngrok_token
+    
+    # Save to both files
+    if grep -q "^NGROK_AUTH_TOKEN=" "$ENV_FILE"; then
+        sed -i "s|^NGROK_AUTH_TOKEN=.*|NGROK_AUTH_TOKEN=$ngrok_token|" "$ENV_FILE"
+    else
+        echo "NGROK_AUTH_TOKEN=$ngrok_token" >> "$ENV_FILE"
+    fi
+    
+    if grep -q "^NGROK_AUTH_TOKEN=" "$TOKENS_FILE"; then
+        sed -i "s|^NGROK_AUTH_TOKEN=.*|NGROK_AUTH_TOKEN=$ngrok_token|" "$TOKENS_FILE"
+    else
+        echo "NGROK_AUTH_TOKEN=$ngrok_token" >> "$TOKENS_FILE"
+    fi
+    
+    # Ask for ngrok region
+    echo -e "${CYAN}Please enter your preferred ngrok region (us, eu, ap, au, sa, jp, in) [default: us]:${NC}"
+    read -r ngrok_region
+    ngrok_region=${ngrok_region:-us}
+    
+    if grep -q "^NGROK_REGION=" "$ENV_FILE"; then
+        sed -i "s|^NGROK_REGION=.*|NGROK_REGION=$ngrok_region|" "$ENV_FILE"
+    else
+        echo "NGROK_REGION=$ngrok_region" >> "$ENV_FILE"
+    fi
+    
+    print_success "ngrok configuration saved"
+else
+    print_step "Skipping ngrok configuration"
+fi
+
 print_header "SYSTEM PREPARATION"
 
 # Update system packages
@@ -85,7 +164,7 @@ chmod +x server_setup.sh
 ./server_setup.sh
 print_success "Server setup completed"
 
-print_step "Running configuration..."
+print_step "Running additional configuration..."
 chmod +x configure.sh
 ./configure.sh
 print_success "Configuration completed"
