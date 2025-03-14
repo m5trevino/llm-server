@@ -15,11 +15,22 @@ REPO_DIR=$(pwd)
 ENV_FILE="${REPO_DIR}/.env"
 TOKENS_FILE="${REPO_DIR}/.tokens"
 
+# Create files if they don't exist
+if [ ! -f "$ENV_FILE" ]; then
+    touch "$ENV_FILE"
+    chmod 600 "$ENV_FILE"
+fi
+
+if [ ! -f "$TOKENS_FILE" ]; then
+    touch "$TOKENS_FILE"
+    chmod 600 "$TOKENS_FILE"
+fi
+
 # Function to get a configuration value
 get_config() {
-    local key=$1
-    local default=$2
-    local prompt=$3
+    local key="$1"
+    local default="$2"
+    local prompt="$3"
     local current=""
     
     # Check if the key exists in the .env file
@@ -29,7 +40,7 @@ get_config() {
     
     # If current is empty, use default
     if [ -z "$current" ]; then
-        current=$default
+        current="$default"
     fi
     
     # Prompt user for input
@@ -38,7 +49,7 @@ get_config() {
     
     # If user didn't enter anything, use current value
     if [ -z "$value" ]; then
-        value=$current
+        value="$current"
     fi
     
     echo "$value"
@@ -46,13 +57,19 @@ get_config() {
 
 # Function to update a configuration value
 update_config() {
-    local key=$1
-    local value=$2
+    local key="$1"
+    local value="$2"
     
     # Check if the key exists in the .env file
     if [ -f "$ENV_FILE" ] && grep -q "^$key=" "$ENV_FILE"; then
-        # Update the key - fixed the sed command here
-        sed -i "s|^$key=.*|$key=$value|" "$ENV_FILE"
+        # Use awk instead of sed for more reliable replacement
+        awk -v key="$key" -v val="$value" '{
+            if ($0 ~ "^"key"=") {
+                print key"="val
+            } else {
+                print $0
+            }
+        }' "$ENV_FILE" > "${ENV_FILE}.tmp" && mv "${ENV_FILE}.tmp" "$ENV_FILE"
     else
         # Add the key
         echo "$key=$value" >> "$ENV_FILE"
@@ -61,19 +78,19 @@ update_config() {
 
 # Function to save a token
 save_token() {
-    local key=$1
-    local value=$2
-    
-    # Create tokens file if it doesn't exist
-    if [ ! -f "$TOKENS_FILE" ]; then
-        touch "$TOKENS_FILE"
-        chmod 600 "$TOKENS_FILE"
-    fi
+    local key="$1"
+    local value="$2"
     
     # Check if the key exists in the tokens file
     if grep -q "^$key=" "$TOKENS_FILE"; then
-        # Update the key - fixed the sed command here
-        sed -i "s|^$key=.*|$key=$value|" "$TOKENS_FILE"
+        # Use awk instead of sed for more reliable replacement
+        awk -v key="$key" -v val="$value" '{
+            if ($0 ~ "^"key"=") {
+                print key"="val
+            } else {
+                print $0
+            }
+        }' "$TOKENS_FILE" > "${TOKENS_FILE}.tmp" && mv "${TOKENS_FILE}.tmp" "$TOKENS_FILE"
     else
         # Add the key
         echo "$key=$value" >> "$TOKENS_FILE"
