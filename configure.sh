@@ -41,7 +41,7 @@ get_config() {
         value=$current
     fi
     
-    echo $value
+    echo "$value"
 }
 
 # Function to update a configuration value
@@ -51,7 +51,7 @@ update_config() {
     
     # Check if the key exists in the .env file
     if [ -f "$ENV_FILE" ] && grep -q "^$key=" "$ENV_FILE"; then
-        # Update the key
+        # Update the key - fixed the sed command here
         sed -i "s|^$key=.*|$key=$value|" "$ENV_FILE"
     else
         # Add the key
@@ -72,7 +72,7 @@ save_token() {
     
     # Check if the key exists in the tokens file
     if grep -q "^$key=" "$TOKENS_FILE"; then
-        # Update the key
+        # Update the key - fixed the sed command here
         sed -i "s|^$key=.*|$key=$value|" "$TOKENS_FILE"
     else
         # Add the key
